@@ -107,6 +107,10 @@ python scripts/build.py
 
 开发调试时不必每次打包。先关闭 Zotero，在 Zotero 配置目录的 `extensions` 文件夹里新建一个名为 `zotero-claude-code@yufeixia` 的文本文件，内容写本仓库 `addon` 文件夹的完整路径。再删掉配置目录下 `prefs.js` 里 `extensions.lastAppBuildId` 和 `extensions.lastAppVersion` 这两行，然后启动 Zotero，在 Tools > Plugins 里启用一次。之后每次改完代码，重启 Zotero 就能生效。
 
+## 相关项目
+
+[Warm Theme for Zotero](https://github.com/YufeiXIA/zotero-warm-theme)：同一套暖色主题的独立小插件，适合只想要配色、不需要对话功能的人。
+
 ## 许可证
 
 [MIT](LICENSE)

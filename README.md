@@ -107,6 +107,10 @@ This writes `build/zotero-claude-code-<version>.xpi` and `build/update.json`. Zo
 
 For development, skip the `.xpi`. Close Zotero, create a text file named `zotero-claude-code@yufeixia` in your Zotero profile's `extensions` folder that contains the full path of this repo's `addon` folder, delete the `extensions.lastAppBuildId` and `extensions.lastAppVersion` lines from the profile's `prefs.js`, and start Zotero. Enable the plugin once under Tools > Plugins. After that, restarting Zotero picks up your changes.
 
+## See also
+
+[Warm Theme for Zotero](https://github.com/YufeiXIA/zotero-warm-theme) is the same warm color theme as a small standalone plugin, for people who want the look without the chat.
+
 ## License
 
 [MIT](LICENSE)
