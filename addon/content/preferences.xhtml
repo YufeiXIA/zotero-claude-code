@@ -1,0 +1,38 @@
+<linkset>
+	<html:link rel="localization" href="zotero-claude-code.ftl"/>
+</linkset>
+<vbox id="zcc-prefs" onload="ZCCPrefs.init()">
+	<groupbox>
+		<label><html:h2 data-l10n-id="zcc-pref-title"/></label>
+
+		<label data-l10n-id="zcc-pref-claude-path"/>
+		<hbox align="center">
+			<html:input id="zcc-claude-path" type="text" flex="1" style="flex: 1"
+				preference="extensions.zotero-claude-code.claudePath"/>
+			<button id="zcc-detect" data-l10n-id="zcc-pref-detect" oncommand="ZCCPrefs.detect()"/>
+		</hbox>
+		<html:div id="zcc-detect-result" class="zcc-pref-hint"/>
+		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-claude-path-hint"/>
+
+		<separator class="thin"/>
+		<label data-l10n-id="zcc-pref-model"/>
+		<html:input type="text" preference="extensions.zotero-claude-code.model"/>
+
+		<separator class="thin"/>
+		<label data-l10n-id="zcc-pref-effort"/>
+		<html:input type="text" preference="extensions.zotero-claude-code.effort"/>
+
+		<separator class="thin"/>
+		<label data-l10n-id="zcc-pref-allowed-tools"/>
+		<html:input type="text" preference="extensions.zotero-claude-code.allowedTools"/>
+		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-allowed-tools-hint"/>
+
+		<separator class="thin"/>
+		<checkbox data-l10n-id="zcc-pref-user-settings" preference="extensions.zotero-claude-code.useUserSettings"/>
+		<checkbox data-l10n-id="zcc-pref-follow-reader" preference="extensions.zotero-claude-code.followReader"/>
+
+		<separator class="thin"/>
+		<label data-l10n-id="zcc-pref-extra-prompt"/>
+		<html:textarea rows="4" preference="extensions.zotero-claude-code.extraPrompt"/>
+	</groupbox>
+</vbox>

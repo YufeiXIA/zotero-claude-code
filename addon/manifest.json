@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "Claude Code for Zotero",
+  "version": "0.1.0",
+  "description": "Chat with the paper you are reading, using the Claude Code CLI on your own machine. Sidebar panel or a separate window.",
+  "author": "Yufei Xia",
+  "homepage_url": "https://github.com/YufeiXIA/zotero-claude-code",
+  "icons": {
+    "48": "content/icons/icon.svg",
+    "96": "content/icons/icon.svg"
+  },
+  "applications": {
+    "zotero": {
+      "id": "zotero-claude-code@yufeixia",
+      "update_url": "https://github.com/YufeiXIA/zotero-claude-code/releases/latest/download/update.json",
+      "strict_min_version": "7.0",
+      "strict_max_version": "10.*"
+    }
+  }
+}

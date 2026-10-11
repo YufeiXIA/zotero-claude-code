@@ -1,0 +1,494 @@
+/* Claude Code for Zotero: chat panel (sidebar section and separate window) */
+
+.zcc-root {
+	--zcc-bg: #ffffff;
+	--zcc-bg-soft: #f6f5f2;
+	--zcc-bg-user: #efeae2;
+	--zcc-border: rgba(0, 0, 0, 0.1);
+	--zcc-text: #1f1e1d;
+	--zcc-text-soft: #6b6a66;
+	--zcc-accent: #c96442;
+	--zcc-accent-text: #ffffff;
+	--zcc-code-bg: #f3f1ec;
+	--zcc-error: #b3261e;
+	--zcc-radius: 10px;
+
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	color: var(--zcc-text);
+	font: message-box;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+	.zcc-root {
+		--zcc-bg: #262624;
+		--zcc-bg-soft: #30302e;
+		--zcc-bg-user: #3a3936;
+		--zcc-border: rgba(255, 255, 255, 0.12);
+		--zcc-text: #ecebe8;
+		--zcc-text-soft: #a8a6a0;
+		--zcc-accent: #d97757;
+		--zcc-code-bg: #1f1f1d;
+		--zcc-error: #f2b8b5;
+	}
+}
+
+/* Sidebar: fixed comfortable height so the composer stays reachable */
+.zcc-root[data-mode="sidebar"] {
+	height: min(70vh, 640px);
+	min-height: 360px;
+	border: 1px solid var(--zcc-border);
+	border-radius: var(--zcc-radius);
+	background: var(--zcc-bg);
+	overflow: hidden;
+}
+
+/* Separate window: fill it exactly. Long titles must not widen the layout. */
+.zcc-window-container {
+	display: flex;
+	width: 100vw;
+	max-width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+.zcc-window-container > .zcc-root {
+	flex: 1;
+	width: 100%;
+	height: 100%;
+	background: var(--zcc-bg);
+}
+.zcc-root,
+.zcc-root * {
+	box-sizing: border-box;
+}
+.zcc-root,
+.zcc-header,
+.zcc-messages,
+.zcc-composer {
+	min-width: 0;
+	max-width: 100%;
+}
+window#zotero-claude-code-window {
+	background: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+	window#zotero-claude-code-window {
+		background: #262624;
+	}
+}
+
+/* Header */
+.zcc-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border-bottom: 1px solid var(--zcc-border);
+	background: var(--zcc-bg-soft);
+	flex: none;
+}
+.zcc-root[data-mode="sidebar"] .zcc-header {
+	cursor: grab;
+}
+.zcc-paper {
+	flex: 1;
+	min-width: 0;
+}
+.zcc-paper-title {
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.zcc-paper-meta {
+	color: var(--zcc-text-soft);
+	font-size: 11.5px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.zcc-actions {
+	display: flex;
+	gap: 2px;
+	flex: none;
+}
+
+/* Buttons */
+.zcc-btn {
+	appearance: none;
+	border: 1px solid var(--zcc-border);
+	background: var(--zcc-bg);
+	color: var(--zcc-text);
+	border-radius: 7px;
+	padding: 3px 9px;
+	font: inherit;
+	cursor: pointer;
+}
+.zcc-btn:hover {
+	background: var(--zcc-bg-soft);
+}
+.zcc-icon-btn {
+	border-color: transparent;
+	background: transparent;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	font-size: 14px;
+	line-height: 1;
+	opacity: 0.75;
+}
+.zcc-icon-btn:hover {
+	opacity: 1;
+}
+.zcc-pin {
+	filter: grayscale(1);
+	opacity: 0.45;
+}
+.zcc-pin.zcc-active {
+	filter: none;
+	opacity: 1;
+}
+
+/* Messages */
+.zcc-messages {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 10px 12px 4px;
+	user-select: text;
+	-moz-user-select: text;
+}
+.zcc-msg {
+	margin: 0 0 14px;
+}
+.zcc-who {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--zcc-text-soft);
+	margin-bottom: 3px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.zcc-user .zcc-user-text {
+	background: var(--zcc-bg-user);
+	border-radius: var(--zcc-radius);
+	padding: 7px 10px;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+.zcc-msg-quote,
+.zcc-quote-text {
+	border-left: 3px solid var(--zcc-accent);
+	margin: 0 0 6px;
+	padding: 4px 8px;
+	color: var(--zcc-text-soft);
+	white-space: pre-wrap;
+	max-height: 9em;
+	overflow-y: auto;
+	font-style: italic;
+}
+.zcc-thinking {
+	color: var(--zcc-text-soft);
+	font-style: italic;
+	animation: zcc-pulse 1.4s ease-in-out infinite;
+}
+@keyframes zcc-pulse {
+	50% { opacity: 0.4; }
+}
+.zcc-error {
+	color: var(--zcc-error);
+	white-space: pre-wrap;
+	border: 1px solid currentColor;
+	border-radius: 8px;
+	padding: 6px 8px;
+	margin-top: 6px;
+	font-size: 12px;
+}
+.zcc-note {
+	color: var(--zcc-text-soft);
+	font-size: 12px;
+}
+.zcc-msg-foot {
+	margin-top: 4px;
+	opacity: 0;
+	transition: opacity 0.15s;
+}
+.zcc-msg:hover .zcc-msg-foot {
+	opacity: 1;
+}
+.zcc-mini {
+	padding: 0 7px;
+	font-size: 11px;
+	border-radius: 6px;
+}
+
+/* Tool activity */
+.zcc-tools {
+	margin: 2px 0 6px;
+}
+.zcc-tool {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--zcc-text-soft);
+	font-size: 12px;
+}
+.zcc-tool-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background: var(--zcc-accent);
+	flex: none;
+	animation: zcc-pulse 1s ease-in-out infinite;
+}
+.zcc-tool.zcc-done .zcc-tool-dot {
+	animation: none;
+	background: #6aa36f;
+}
+.zcc-tool.zcc-failed .zcc-tool-dot {
+	background: var(--zcc-error);
+}
+.zcc-tool-text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Empty state */
+.zcc-empty {
+	padding: 18px 4px;
+	text-align: center;
+	color: var(--zcc-text-soft);
+}
+.zcc-empty-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--zcc-text);
+	margin-bottom: 4px;
+}
+.zcc-chips {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 12px;
+}
+.zcc-chip {
+	border-radius: 999px;
+	padding: 4px 11px;
+	background: var(--zcc-bg-soft);
+}
+
+/* Pending quote */
+.zcc-quote {
+	flex: none;
+	margin: 0 12px 6px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	background: var(--zcc-bg-soft);
+}
+.zcc-quote[hidden] {
+	display: none;
+}
+.zcc-quote-head {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 11px;
+	color: var(--zcc-text-soft);
+	margin-bottom: 3px;
+}
+
+/* Composer */
+.zcc-composer {
+	flex: none;
+	width: auto;
+	margin: 0 10px 10px;
+	border: 1px solid var(--zcc-border);
+	border-radius: 12px;
+	background: var(--zcc-bg);
+	padding: 6px 8px;
+}
+.zcc-composer:focus-within {
+	border-color: var(--zcc-accent);
+}
+.zcc-input {
+	width: 100%;
+	box-sizing: border-box;
+	border: none;
+	outline: none;
+	resize: none;
+	background: transparent;
+	color: var(--zcc-text);
+	font: inherit;
+	min-height: 3.6em;
+	max-height: 12em;
+}
+.zcc-composer-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.zcc-spacer {
+	flex: 1;
+}
+.zcc-select {
+	font: inherit;
+	font-size: 11.5px;
+	color: var(--zcc-text-soft);
+	background: var(--zcc-bg-soft);
+	border: 1px solid var(--zcc-border);
+	border-radius: 6px;
+	padding: 1px 4px;
+	max-width: 50%;
+}
+.zcc-send {
+	background: var(--zcc-accent);
+	border-color: var(--zcc-accent);
+	color: var(--zcc-accent-text);
+	font-weight: 600;
+}
+.zcc-send:hover {
+	background: var(--zcc-accent);
+	filter: brightness(1.07);
+}
+.zcc-send.zcc-stop {
+	background: var(--zcc-text-soft);
+	border-color: var(--zcc-text-soft);
+}
+
+/* "Opened in a separate window" placeholder in the sidebar */
+.zcc-popped {
+	display: none;
+}
+.zcc-root.zcc-is-popped {
+	height: auto;
+	min-height: 0;
+}
+.zcc-root.zcc-is-popped > :not(.zcc-popped):not(.zcc-header) {
+	display: none;
+}
+.zcc-root.zcc-is-popped .zcc-popped {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	padding: 10px;
+	color: var(--zcc-text-soft);
+}
+.zcc-popped-text {
+	flex-basis: 100%;
+}
+
+/* Markdown */
+.zcc-md > :first-child {
+	margin-top: 0;
+}
+.zcc-md p {
+	margin: 0 0 8px;
+	word-break: break-word;
+}
+.zcc-md .zcc-h {
+	margin: 12px 0 6px;
+	font-size: 13.5px;
+}
+.zcc-md ul,
+.zcc-md ol {
+	margin: 0 0 8px;
+	padding-inline-start: 20px;
+}
+.zcc-md li {
+	margin: 2px 0;
+}
+.zcc-md blockquote {
+	margin: 0 0 8px;
+	padding: 2px 10px;
+	border-left: 3px solid var(--zcc-border);
+	color: var(--zcc-text-soft);
+}
+.zcc-md hr {
+	border: none;
+	border-top: 1px solid var(--zcc-border);
+	margin: 10px 0;
+}
+.zcc-code-inline,
+.zcc-math {
+	font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+	font-size: 12px;
+	background: var(--zcc-code-bg);
+	border-radius: 4px;
+	padding: 0 4px;
+}
+.zcc-math {
+	font-family: "Cambria Math", "STIX Two Math", serif;
+	font-size: 13px;
+	font-style: italic;
+}
+.zcc-math-block {
+	font-family: "Cambria Math", "STIX Two Math", serif;
+	font-style: italic;
+	background: var(--zcc-code-bg);
+	border-radius: 6px;
+	padding: 6px 10px;
+	margin: 0 0 8px;
+	white-space: pre-wrap;
+	overflow-x: auto;
+	text-align: center;
+}
+.zcc-code-block {
+	margin: 0 0 8px;
+	border-radius: 8px;
+	background: var(--zcc-code-bg);
+	overflow: hidden;
+}
+.zcc-code-bar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 2px 6px 2px 10px;
+	font-size: 11px;
+	color: var(--zcc-text-soft);
+	border-bottom: 1px solid var(--zcc-border);
+}
+.zcc-code-copy {
+	appearance: none;
+	border: none;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+}
+.zcc-code-block pre {
+	margin: 0;
+	padding: 8px 10px;
+	overflow-x: auto;
+	font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+	font-size: 12px;
+	line-height: 1.45;
+}
+.zcc-table-wrap {
+	overflow-x: auto;
+	margin: 0 0 8px;
+}
+.zcc-md table {
+	border-collapse: collapse;
+	font-size: 12px;
+}
+.zcc-md th,
+.zcc-md td {
+	border: 1px solid var(--zcc-border);
+	padding: 3px 7px;
+	text-align: left;
+	vertical-align: top;
+}
+.zcc-md th {
+	background: var(--zcc-bg-soft);
+}
+.zcc-link {
+	color: var(--zcc-accent);
+	text-decoration: underline;
+	cursor: pointer;
+}
