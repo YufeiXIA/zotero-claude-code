@@ -15,6 +15,7 @@ This is an unofficial project. It is not affiliated with Anthropic or with the Z
 - Select text in a PDF and click "Ask Claude" in the popup to ask about that passage.
 - The panel lives in the item pane. Drag its title bar out of Zotero, or click the pop-out button, and it becomes a separate window. The reader toolbar also gets a button that opens the window.
 - The model and reasoning effort menus sit under the input box. Changing the model keeps the conversation going.
+- The chat has four color themes (Auto, Light, Warm, Dark) and an adjustable text size. If you like the warm look, one switch applies it to the rest of Zotero too: the library, item list, item pane and reader windows.
 - By default Claude can only read: it can open files, search the text and look things up on the web, but it cannot edit files or run commands.
 
 ## Requirements
@@ -44,6 +45,8 @@ The buttons in the chat header:
 | ＋ | Start a new conversation for this paper |
 | ⧉ / ⇲ | Move the chat into its own window, or back into the sidebar |
 
+To give all of Zotero the same warm colors, tick "Use this warm look for all of Zotero" in the appearance bar, or use Tools > Warm Theme for Zotero. It changes only colors, follows Zotero's light and dark mode, and turning it off restores Zotero's own colors right away.
+
 Text size also follows the usual browser keys while the chat has focus: Ctrl+= and Ctrl+- (or Ctrl and the mouse wheel) make it bigger or smaller, and Ctrl+0 resets it. The color theme and text size are shared by the sidebar and the window, and Zotero remembers them.
 
 A two-monitor setup works well. In Zotero's Settings > General > Reader, turn on "Open files in new windows instead of tabs". PDFs then open in their own windows, so you can keep the reader on one screen and the chat window on the other. The chat window remembers where you put it.
@@ -63,6 +66,7 @@ Open Zotero's Settings and choose Claude Code.
 | Load my Claude Code user settings | on | Uses your `~/.claude` setup: CLAUDE.md, MCP servers and permission rules. Turn it off for a plain assistant. |
 | Extra instructions | empty | Added to every conversation, for example "Answer in Chinese". |
 | Follow the paper I'm reading | on | Off means the chat only changes when you pick a paper yourself. |
+| Warm color theme for all of Zotero | off | Same switch as in the appearance bar and the Tools menu. |
 
 Settings take effect on the next message. You don't need to restart Zotero.
 

@@ -40,6 +40,7 @@ ZCC.ChatView = (() => {
 			theme_light: "Light",
 			theme_warm: "Warm",
 			theme_dark: "Dark",
+			zoteroTheme: "Use this warm look for all of Zotero",
 			smaller: "Smaller text",
 			larger: "Larger text",
 			suggestions: ["Summarize the main contribution", "Explain the method in plain words", "What are the limitations?", "What does this page say?"],
@@ -80,6 +81,7 @@ ZCC.ChatView = (() => {
 			theme_light: "浅色",
 			theme_warm: "暖色",
 			theme_dark: "深色",
+			zoteroTheme: "Zotero 整体也用这套暖色",
 			smaller: "字号调小",
 			larger: "字号调大",
 			suggestions: ["总结这篇论文的核心贡献", "用通俗的话解释方法部分", "这篇论文有哪些局限？", "当前这一页讲了什么？"],
@@ -205,7 +207,12 @@ ZCC.ChatView = (() => {
 			sizeValue,
 			button(doc, "", "A+", t("larger"), () => setFontSize(fontSize() + 1)),
 		);
-		appearanceBar.append(el(doc, "span", null, t("themeLabel")), themeSeg, el(doc, "span", null, t("sizeLabel")), sizeSeg);
+		const zoteroThemeLabel = el(doc, "label", "zcc-zotero-theme");
+		const zoteroThemeBox = el(doc, "input");
+		zoteroThemeBox.setAttribute("type", "checkbox");
+		zoteroThemeBox.addEventListener("change", () => Zotero.Prefs.set(PREF + "zoteroTheme", zoteroThemeBox.checked, true));
+		zoteroThemeLabel.append(zoteroThemeBox, doc.createTextNode(" " + t("zoteroTheme")));
+		appearanceBar.append(el(doc, "span", null, t("themeLabel")), themeSeg, el(doc, "span", null, t("sizeLabel")), sizeSeg, zoteroThemeLabel);
 
 		const messages = el(doc, "div", "zcc-messages");
 		const quoteBox = el(doc, "div", "zcc-quote");
@@ -235,6 +242,7 @@ ZCC.ChatView = (() => {
 			if (theme === "auto") delete root.dataset.theme;
 			else root.dataset.theme = theme;
 			for (const [name, b] of Object.entries(themeButtons)) b.classList.toggle("zcc-active", name === theme);
+			zoteroThemeBox.checked = !!Zotero.Prefs.get(PREF + "zoteroTheme", true);
 			const size = fontSize();
 			root.style.setProperty("--zcc-font-size", size + "px");
 			sizeValue.textContent = size + "px";
@@ -262,6 +270,7 @@ ZCC.ChatView = (() => {
 
 		const prefObserver = Zotero.Prefs.registerObserver(PREF + "theme", applyAppearance, true);
 		const sizeObserver = Zotero.Prefs.registerObserver(PREF + "fontSize", applyAppearance, true);
+		const zoteroThemeObserver = Zotero.Prefs.registerObserver(PREF + "zoteroTheme", applyAppearance, true);
 		applyAppearance();
 
 		// ---- behaviour ----
@@ -469,6 +478,7 @@ ZCC.ChatView = (() => {
 			destroy() {
 				Zotero.Prefs.unregisterObserver(prefObserver);
 				Zotero.Prefs.unregisterObserver(sizeObserver);
+				Zotero.Prefs.unregisterObserver(zoteroThemeObserver);
 				unsubscribe();
 				quoteListeners.delete(onQuote);
 				root.remove();

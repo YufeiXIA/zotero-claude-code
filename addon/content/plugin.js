@@ -79,6 +79,12 @@ ZCC.Plugin = (() => {
 
 		cleanups.push(ZCC.Context.onChange(() => ZCC.Store.followCurrent()));
 
+		const themeObserver = Zotero.Prefs.registerObserver(THEME_PREF, refreshZoteroTheme, true);
+		cleanups.push(() => {
+			Zotero.Prefs.unregisterObserver(themeObserver);
+			for (const win of themedWindows()) removeZoteroTheme(win);
+		});
+
 		// Readers that were already open before the plugin started (some may still be loading)
 		addButtonToOpenReaders();
 		for (const delay of [1500, 4000, 10000]) {
@@ -94,8 +100,48 @@ ZCC.Plugin = (() => {
 
 	// ---- main window additions ----
 
+	// ---- optional warm theme for Zotero's own windows ----
+
+	const THEME_PREF = "extensions.zotero-claude-code.zoteroTheme";
+
+	function applyZoteroTheme(win) {
+		if (!win || win.closed || !win.document?.documentElement) return;
+		const doc = win.document;
+		if (!doc.getElementById("zcc-zotero-theme-css")) {
+			const link = doc.createElementNS("http://www.w3.org/1999/xhtml", "link");
+			link.id = "zcc-zotero-theme-css";
+			link.rel = "stylesheet";
+			link.href = CHROME + "zotero-theme.css";
+			doc.documentElement.appendChild(link);
+		}
+		doc.documentElement.toggleAttribute("zcc-zotero-theme", !!Zotero.Prefs.get(THEME_PREF, true));
+	}
+
+	function removeZoteroTheme(win) {
+		if (!win || win.closed || !win.document?.documentElement) return;
+		win.document.documentElement.removeAttribute("zcc-zotero-theme");
+		win.document.getElementById("zcc-zotero-theme-css")?.remove();
+	}
+
+	function themedWindows() {
+		const wins = new Set(Zotero.getMainWindows());
+		for (const reader of ZCC.Context.openReaders()) {
+			if (reader._window) wins.add(reader._window);
+		}
+		return [...wins];
+	}
+
+	function refreshZoteroTheme() {
+		for (const win of themedWindows()) applyZoteroTheme(win);
+		const on = !!Zotero.Prefs.get(THEME_PREF, true);
+		for (const win of Zotero.getMainWindows()) {
+			win.document.getElementById("zcc-menu-theme")?.setAttribute("checked", on ? "true" : "false");
+		}
+	}
+
 	function addToWindow(win) {
 		const doc = win.document;
+		applyZoteroTheme(win);
 		win.MozXULElement.insertFTLIfNeeded("zotero-claude-code.ftl");
 		if (!doc.getElementById("zcc-stylesheet")) {
 			const link = doc.createElementNS("http://www.w3.org/1999/xhtml", "link");
@@ -112,6 +158,17 @@ ZCC.Plugin = (() => {
 			item.addEventListener("command", () => openWindow());
 			tools.appendChild(item);
 		}
+		if (tools && !doc.getElementById("zcc-menu-theme")) {
+			const item = doc.createXULElement("menuitem");
+			item.id = "zcc-menu-theme";
+			item.setAttribute("type", "checkbox");
+			item.setAttribute("data-l10n-id", "zcc-menu-zotero-theme");
+			item.setAttribute("checked", Zotero.Prefs.get(THEME_PREF, true) ? "true" : "false");
+			item.addEventListener("command", () => {
+				Zotero.Prefs.set(THEME_PREF, !Zotero.Prefs.get(THEME_PREF, true), true);
+			});
+			tools.appendChild(item);
+		}
 	}
 
 	function removeFromWindow(win) {
@@ -121,6 +178,8 @@ ZCC.Plugin = (() => {
 		const doc = win.document;
 		doc.getElementById("zcc-stylesheet")?.remove();
 		doc.getElementById("zcc-menu-open")?.remove();
+		doc.getElementById("zcc-menu-theme")?.remove();
+		removeZoteroTheme(win);
 		doc.querySelector('link[href="zotero-claude-code.ftl"]')?.remove();
 	}
 
@@ -161,6 +220,7 @@ ZCC.Plugin = (() => {
 	function onRenderToolbar(event) {
 		const { reader, doc, append } = event;
 		ZCC.Context.track(reader);
+		if (reader._window && reader._window !== Zotero.getMainWindow()) applyZoteroTheme(reader._window);
 		append(readerButton(reader, doc));
 	}
 
@@ -169,6 +229,7 @@ ZCC.Plugin = (() => {
 	function addButtonToOpenReaders() {
 		for (const reader of ZCC.Context.openReaders()) {
 			ZCC.Context.track(reader);
+			if (reader._window && reader._window !== Zotero.getMainWindow()) applyZoteroTheme(reader._window);
 			const doc = reader._iframeWindow?.document;
 			const slot = doc?.querySelector(".toolbar .end .custom-sections");
 			if (slot && !slot.querySelector(".zcc-reader-button")) slot.append(readerButton(reader, doc));

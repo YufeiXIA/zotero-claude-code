@@ -106,6 +106,13 @@
 	background: var(--zcc-accent);
 	color: var(--zcc-accent-text);
 }
+.zcc-zotero-theme {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	color: var(--zcc-text-soft);
+}
 .zcc-size-value {
 	min-width: 2.6em;
 	text-align: center;

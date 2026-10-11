@@ -1,0 +1,98 @@
+/* Optional warm theme for Zotero itself (Settings > Claude Code, or the chat's "Aa" bar).
+   Active only while the window's root element has the zcc-zotero-theme attribute,
+   so turning it off restores Zotero's own colors immediately. */
+
+:root[zcc-zotero-theme] {
+	--zcc-t-accent: #c96442;
+
+	--material-background: #faf9f5;
+	--material-background50: rgba(250, 249, 245, 0.5);
+	--material-background70: rgba(250, 249, 245, 0.7);
+	--color-background: #faf9f5;
+	--color-background30: rgba(250, 249, 245, 0.3);
+	--color-background50: rgba(250, 249, 245, 0.5);
+	--color-background70: rgba(250, 249, 245, 0.7);
+	--material-sidepane: #f0eee6;
+	--material-tabbar: #e9e6dc;
+	--material-toolbar: #f4f2eb;
+	--material-stripe: #f4f1e9;
+	--material-button: #fdfcf9;
+	--material-control: #fdfcf9;
+	--material-menu: rgba(246, 243, 236, 0.92);
+	--material-mix-quinary: #eeebe2;
+	--material-mix-quarternary: #e3dfd3;
+
+	--color-border: rgba(70, 52, 30, 0.16);
+	--color-border50: rgba(70, 52, 30, 0.08);
+	--material-border: 1px solid rgba(70, 52, 30, 0.16);
+	--material-border50: 1px solid rgba(70, 52, 30, 0.08);
+	--material-border-quarternary: 1px solid rgba(70, 52, 30, 0.1);
+	--material-border-quinary: 1px solid rgba(70, 52, 30, 0.05);
+	--color-panedivider: #dcd6c8;
+	--material-panedivider: 1px solid #dcd6c8;
+	--color-quarternary-on-background: #e6e1d5;
+	--color-quarternary-on-sidepane: #dad4c6;
+
+	--fill-primary: rgba(38, 30, 20, 0.88);
+	--fill-secondary: rgba(60, 46, 30, 0.58);
+	--fill-tertiary: rgba(60, 46, 30, 0.27);
+	--fill-quarternary: rgba(60, 46, 30, 0.11);
+	--fill-quinary: rgba(60, 46, 30, 0.055);
+	--fill-senary: rgba(60, 46, 30, 0.022);
+
+	--color-accent: var(--zcc-t-accent);
+	--color-accent-primary: var(--zcc-t-accent);
+	--color-accent-primary-hover: color-mix(in srgb, black 10%, var(--zcc-t-accent));
+	--color-accent-primary-active: color-mix(in srgb, black 20%, var(--zcc-t-accent));
+	--accent-blue: var(--zcc-t-accent);
+	--accent-blue10: rgba(201, 100, 66, 0.1);
+	--accent-blue30: rgba(201, 100, 66, 0.3);
+	--accent-blue50: rgba(201, 100, 66, 0.5);
+	--accent-azure: #d98a63;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root[zcc-zotero-theme] {
+		--zcc-t-accent: #d97757;
+
+		--material-background: #262624;
+		--material-background50: rgba(38, 38, 36, 0.5);
+		--material-background70: rgba(38, 38, 36, 0.7);
+		--color-background: #262624;
+		--color-background30: rgba(38, 38, 36, 0.3);
+		--color-background50: rgba(38, 38, 36, 0.5);
+		--color-background70: rgba(38, 38, 36, 0.7);
+		--material-sidepane: #1f1e1c;
+		--material-tabbar: #1a1917;
+		--material-toolbar: #2b2a27;
+		--material-stripe: #2a2927;
+		--material-button: #34332f;
+		--material-control: #34332f;
+		--material-menu: rgba(43, 42, 39, 0.94);
+		--material-mix-quinary: #2f2e2b;
+		--material-mix-quarternary: #393834;
+
+		--color-border: rgba(255, 245, 230, 0.14);
+		--color-border50: rgba(255, 245, 230, 0.07);
+		--material-border: 1px solid rgba(255, 245, 230, 0.14);
+		--material-border50: 1px solid rgba(255, 245, 230, 0.07);
+		--material-border-quarternary: 1px solid rgba(255, 245, 230, 0.1);
+		--material-border-quinary: 1px solid rgba(255, 245, 230, 0.05);
+		--color-panedivider: #3b3a36;
+		--material-panedivider: 1px solid #3b3a36;
+		--color-quarternary-on-background: #3a3935;
+		--color-quarternary-on-sidepane: #34332f;
+
+		--fill-primary: rgba(250, 247, 240, 0.9);
+		--fill-secondary: rgba(250, 247, 240, 0.58);
+		--fill-tertiary: rgba(250, 247, 240, 0.28);
+		--fill-quarternary: rgba(250, 247, 240, 0.12);
+		--fill-quinary: rgba(250, 247, 240, 0.06);
+		--fill-senary: rgba(250, 247, 240, 0.025);
+
+		--accent-blue10: rgba(217, 119, 87, 0.12);
+		--accent-blue30: rgba(217, 119, 87, 0.3);
+		--accent-blue50: rgba(217, 119, 87, 0.5);
+		--accent-azure: #e09372;
+	}
+}
