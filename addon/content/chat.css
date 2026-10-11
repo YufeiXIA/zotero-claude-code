@@ -580,3 +580,216 @@ window#zotero-claude-code-window {
 	text-decoration: underline;
 	cursor: pointer;
 }
+
+/* ---- 0.3.0: modes, write toggle, quick actions, attachments, popups ---- */
+
+.zcc-composer-wrap {
+	position: relative;
+	flex: none;
+}
+.zcc-composer-bar {
+	flex-wrap: wrap;
+	row-gap: 4px;
+}
+.zcc-mode .zcc-btn {
+	padding: 1px 8px;
+	font-size: 0.88em;
+}
+.zcc-mode[hidden],
+.zcc-write[hidden],
+.zcc-quick[hidden],
+.zcc-attachments[hidden],
+.zcc-popup[hidden] {
+	display: none;
+}
+.zcc-write {
+	filter: grayscale(1);
+	opacity: 0.45;
+}
+.zcc-write.zcc-active {
+	filter: none;
+	opacity: 1;
+	color: var(--zcc-accent);
+	background: var(--zcc-bg-soft);
+	border-color: var(--zcc-border);
+}
+.zcc-history {
+	position: relative;
+}
+.zcc-history.zcc-has-items::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--zcc-accent);
+}
+.zcc-icon-btn.zcc-active {
+	opacity: 1;
+	background: var(--zcc-bg);
+	border-color: var(--zcc-border);
+}
+
+/* Quick actions above the composer */
+.zcc-quick {
+	flex: none;
+	display: flex;
+	gap: 5px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	padding: 0 10px 6px;
+}
+.zcc-quick .zcc-chip {
+	flex: none;
+	padding: 2px 10px;
+	font-size: 0.88em;
+	white-space: nowrap;
+}
+.zcc-chip-write {
+	border-color: color-mix(in srgb, var(--zcc-accent) 50%, transparent);
+	color: var(--zcc-accent);
+}
+
+/* Attachments inside the composer: @ papers and images */
+.zcc-attachments {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-bottom: 5px;
+}
+.zcc-ref-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	max-width: 100%;
+	padding: 1px 4px 1px 7px;
+	border-radius: 999px;
+	background: var(--zcc-bg-soft);
+	border: 1px solid var(--zcc-border);
+	font-size: 0.88em;
+	color: var(--zcc-text-soft);
+}
+.zcc-ref-at {
+	color: var(--zcc-accent);
+	font-weight: 600;
+}
+.zcc-ref-text {
+	max-width: 220px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.zcc-ref-static {
+	padding: 1px 8px;
+	margin: 0 4px 4px 0;
+}
+.zcc-chip-x {
+	border: none;
+	background: transparent;
+	padding: 0 4px;
+	line-height: 1;
+	color: var(--zcc-text-soft);
+	font-size: 1.05em;
+	cursor: pointer;
+}
+.zcc-chip-x:hover {
+	color: var(--zcc-error);
+	background: transparent;
+}
+.zcc-thumb {
+	position: relative;
+	display: inline-block;
+}
+.zcc-thumb img {
+	display: block;
+	height: 56px;
+	max-width: 120px;
+	object-fit: cover;
+	border-radius: 6px;
+	border: 1px solid var(--zcc-border);
+}
+.zcc-thumb .zcc-chip-x {
+	position: absolute;
+	top: -6px;
+	right: -6px;
+	background: var(--zcc-bg);
+	border: 1px solid var(--zcc-border);
+	border-radius: 50%;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+}
+.zcc-msg-refs {
+	margin-bottom: 2px;
+}
+.zcc-msg-images {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+.zcc-msg-image {
+	max-height: 160px;
+	max-width: 100%;
+	border-radius: 8px;
+	border: 1px solid var(--zcc-border);
+}
+
+/* Popup list anchored above the composer: / commands, @ papers, chat history */
+.zcc-popup {
+	position: absolute;
+	left: 10px;
+	right: 10px;
+	bottom: calc(100% - 4px);
+	max-height: 260px;
+	overflow-y: auto;
+	background: var(--zcc-bg);
+	border: 1px solid var(--zcc-border);
+	border-radius: 10px;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+	padding: 4px;
+	z-index: 10;
+}
+.zcc-popup-item {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	padding: 5px 8px;
+	border-radius: 7px;
+	cursor: pointer;
+	position: relative;
+}
+.zcc-popup-item:hover,
+.zcc-popup-item.zcc-selected {
+	background: var(--zcc-bg-soft);
+}
+.zcc-popup-item.zcc-current .zcc-popup-title::before {
+	content: "● ";
+	color: var(--zcc-accent);
+}
+.zcc-popup-title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding-right: 22px;
+}
+.zcc-popup-sub {
+	font-size: 0.85em;
+	color: var(--zcc-text-soft);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	padding-right: 22px;
+}
+.zcc-popup-item .zcc-chip-x {
+	position: absolute;
+	right: 4px;
+	top: 5px;
+}
+.zcc-popup-empty {
+	padding: 8px;
+	color: var(--zcc-text-soft);
+	font-size: 0.92em;
+}

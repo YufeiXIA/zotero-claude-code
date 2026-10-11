@@ -171,5 +171,72 @@ ZCC.Context = (() => {
 		return lines.join("\n");
 	}
 
-	return { track, onTabSelect, onChange, currentItem, currentReader, openReaders, describe, refresh, block };
+	// Papers the user attached to a message with @
+	function refsBlock(refs) {
+		if (!refs?.length) return "";
+		const lines = ["<referenced_papers>"];
+		for (const paper of refs) {
+			lines.push(`- ${paper.title}` + (paper.creators ? ` (${paper.creators}${paper.year ? ", " + paper.year : ""})` : paper.year ? ` (${paper.year})` : ""));
+			if (paper.filePath) lines.push(`  Full text file: ${paper.filePath}`);
+			lines.push(`  Zotero item key: ${paper.key}`);
+		}
+		lines.push("</referenced_papers>");
+		return lines.join("\n");
+	}
+
+	// Library mode: what the user has selected and open, so Claude knows where to start
+	function libraryBlock() {
+		const lines = ["<zotero_library>", "The user is asking about their Zotero library as a whole. Use the zotero_plugin tools to search it and read items; read PDFs with the Read tool."];
+		let selected = [];
+		try {
+			selected = (Zotero.getActiveZoteroPane()?.getSelectedItems() || []).filter(i => i.isRegularItem());
+		}
+		catch (e) {}
+		if (selected.length) {
+			lines.push(`Selected in the library (${selected.length}):`);
+			for (const item of selected.slice(0, 20)) {
+				lines.push(`- ${item.getField("title") || "(untitled)"}` + (shortCreators(item) ? ` (${shortCreators(item)}${item.getField("year") ? ", " + item.getField("year") : ""})` : "") + ` [key ${item.libraryID}_${item.key}]`);
+			}
+			if (selected.length > 20) lines.push(`… and ${selected.length - 20} more; use get_context for the full list.`);
+		}
+		const readers = openReaders();
+		if (readers.length) {
+			lines.push("Open in the reader:");
+			for (const reader of readers.slice(0, 10)) {
+				const item = Zotero.Items.get(reader.itemID);
+				const main = item?.parentItem || item;
+				if (main) lines.push(`- ${main.getField("title") || "(untitled)"} [key ${main.libraryID}_${main.key}]`);
+			}
+		}
+		lines.push("</zotero_library>");
+		return lines.join("\n");
+	}
+
+	// Quick search for the @ picker: regular items whose title/creator/year match
+	async function searchItems(query, limit = 8) {
+		query = String(query || "").trim();
+		const ids = [];
+		for (const library of Zotero.Libraries.getAll()) {
+			if (library.libraryType === "feed") continue;
+			const s = new Zotero.Search();
+			s.libraryID = library.libraryID;
+			if (query) s.addCondition("quicksearch-titleCreatorYear", "contains", query);
+			s.addCondition("deleted", "false");
+			try {
+				ids.push(...await s.search());
+			}
+			catch (e) {}
+			if (ids.length > 400) break;
+		}
+		const items = (await Zotero.Items.getAsync(ids)).filter(i => i.isRegularItem());
+		items.sort((a, b) => (b.dateModified || "").localeCompare(a.dateModified || ""));
+		const out = [];
+		for (const item of items.slice(0, limit)) {
+			const paper = await describe(item);
+			if (paper) out.push(paper);
+		}
+		return out;
+	}
+
+	return { track, onTabSelect, onChange, currentItem, currentReader, openReaders, describe, refresh, block, refsBlock, libraryBlock, searchItems };
 })();

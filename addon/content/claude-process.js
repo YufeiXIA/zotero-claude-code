@@ -1,14 +1,110 @@
 /* global Zotero, Services, ChromeUtils, IOUtils, PathUtils, ZCC */
-// Models offered in the chat's model menu. Any other model name typed in Settings also works.
-ZCC.Models = {
-	list: [
-		{ id: "claude-opus-5-5", label: "Claude Opus 5.5" },
-		{ id: "claude-sonnet-5-5", label: "Claude Sonnet 5.5" },
-		{ id: "claude-fable-5-1", label: "Claude Fable 5.1" },
-		{ id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
-	],
-	efforts: ["", "low", "medium", "high", "xhigh", "max"],
-};
+// Models offered in the chat's model menu. The list is read from Claude Code itself (so new
+// models show up without a plugin update); FALLBACK is used until that has happened once.
+ZCC.Models = (() => {
+	const PREF = "extensions.zotero-claude-code.";
+	const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+	const FALLBACK = [
+		{ id: "opus", label: "Opus", description: "Opus 5.5 · Best for everyday, complex tasks", resolvedModel: "claude-opus-5-5", efforts: EFFORTS },
+		{ id: "sonnet", label: "Sonnet", description: "Sonnet 5.5 · Efficient for routine tasks", resolvedModel: "claude-sonnet-5-5", efforts: EFFORTS },
+		{ id: "fable", label: "Fable", description: "Fable 5.1 · Most capable for your hardest and longest-running tasks", resolvedModel: "claude-fable-5-1", efforts: EFFORTS },
+		{ id: "haiku", label: "Haiku", description: "Haiku 5.5 · Fastest for quick answers", resolvedModel: "claude-haiku-5-5", efforts: EFFORTS },
+	];
+	let catalog = null;
+	let loading = null;
+	const listeners = new Set();
+
+	function onChange(fn) {
+		listeners.add(fn);
+		return () => listeners.delete(fn);
+	}
+
+	function emit() {
+		for (const fn of listeners) {
+			try {
+				fn();
+			}
+			catch (e) {
+				Zotero.logError(e);
+			}
+		}
+	}
+
+	// Entries as Claude Code reports them in its `initialize` response
+	function normalize(models) {
+		const out = [];
+		for (const m of models || []) {
+			if (!m || typeof m.value !== "string" || m.value === "default") continue;
+			const efforts = Array.isArray(m.supportedEffortLevels) && m.supportedEffortLevels.length
+				? m.supportedEffortLevels.filter(e => typeof e === "string")
+				: (m.supportsEffort === false ? [] : EFFORTS);
+			out.push({
+				id: m.value,
+				label: m.displayName || m.value,
+				description: m.description || "",
+				resolvedModel: m.resolvedModel || "",
+				efforts,
+			});
+		}
+		return out;
+	}
+
+	function readCache() {
+		try {
+			const raw = Zotero.Prefs.get(PREF + "modelCatalog", true);
+			const data = raw && JSON.parse(raw);
+			if (Array.isArray(data?.models) && data.models.length) return data.models;
+		}
+		catch (e) {}
+		return null;
+	}
+
+	function list() {
+		if (catalog) return catalog;
+		catalog = readCache();
+		return catalog || FALLBACK;
+	}
+
+	// The menu entry for a value of the "model" pref: an alias ("opus"), a full model name
+	// (matched against what the alias resolves to), or null if it is something we don't know.
+	function find(value) {
+		value = (value || "").trim();
+		if (!value) return null;
+		return list().find(m => m.id === value) || list().find(m => m.resolvedModel && m.resolvedModel === value) || null;
+	}
+
+	function effortsFor(value) {
+		const entry = find(value);
+		return entry ? entry.efforts : EFFORTS;
+	}
+
+	// Ask Claude Code for its model list. Cheap (one short-lived process); results are kept in
+	// a pref so the menu is right immediately at the next start.
+	async function load({ force = false } = {}) {
+		if (loading) return loading;
+		if (catalog && !force && catalog !== FALLBACK) return catalog;
+		loading = (async () => {
+			try {
+				const models = normalize(await ZCC.Claude.modelCatalog());
+				if (models.length) {
+					catalog = models;
+					Zotero.Prefs.set(PREF + "modelCatalog", JSON.stringify({ models, at: Date.now() }), true);
+					emit();
+				}
+			}
+			catch (e) {
+				Zotero.debug("Claude Code for Zotero: could not read the model list: " + e);
+			}
+			finally {
+				loading = null;
+			}
+			return list();
+		})();
+		return loading;
+	}
+
+	return { FALLBACK, EFFORTS, list, find, effortsFor, load, onChange };
+})();
 
 ZCC.Claude = (() => {
 	const { Subprocess } = ChromeUtils.importESModule("resource://gre/modules/Subprocess.sys.mjs");
@@ -138,6 +234,67 @@ ZCC.Claude = (() => {
 		return cachedExe;
 	}
 
+	// Start a short-lived `claude` process, send the stream-json `initialize` control request,
+	// and return the `models` array from its response.
+	async function modelCatalog(timeoutMs = 20000) {
+		const exe = await executable();
+		const proc = await Subprocess.call({
+			command: exe,
+			arguments: ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--setting-sources", "local", "--strict-mcp-config"],
+			environment: {},
+			environmentAppend: true,
+			stderr: "pipe",
+		});
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			try {
+				proc.kill();
+			}
+			catch (e) {}
+		};
+		const timer = setTimeout(finish, timeoutMs);
+		// Drain stderr so a chatty process can never block on a full pipe
+		(async () => {
+			try {
+				while (await proc.stderr.readString()) {}
+			}
+			catch (e) {}
+		})();
+		try {
+			await proc.stdin.write(JSON.stringify({ type: "control_request", request_id: "zcc-init", request: { subtype: "initialize" } }) + "\n");
+			let buffer = "";
+			let chunk;
+			while (!done && (chunk = await proc.stdout.readString())) {
+				buffer += chunk;
+				let newline;
+				while ((newline = buffer.indexOf("\n")) >= 0) {
+					const line = buffer.slice(0, newline).trim();
+					buffer = buffer.slice(newline + 1);
+					if (!line) continue;
+					let event;
+					try {
+						event = JSON.parse(line);
+					}
+					catch (e) {
+						continue;
+					}
+					if (event.type === "control_response") {
+						const response = event.response?.response || event.response || {};
+						if (event.response?.subtype === "error") throw new Error(event.response.error || "initialize failed");
+						return response.models || [];
+					}
+				}
+			}
+			throw new Error("Claude Code exited before answering the initialize request");
+		}
+		finally {
+			clearTimeout(timer);
+			finish();
+		}
+	}
+
 	function resetCache() {
 		cachedExe = null;
 	}
@@ -232,5 +389,5 @@ ZCC.Claude = (() => {
 		}
 	}
 
-	return { detect, executable, resetCache, Session };
+	return { detect, executable, resetCache, modelCatalog, Session };
 })();

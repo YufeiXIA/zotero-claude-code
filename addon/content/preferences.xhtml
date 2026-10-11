@@ -17,6 +17,7 @@
 		<separator class="thin"/>
 		<label data-l10n-id="zcc-pref-model"/>
 		<html:input type="text" preference="extensions.zotero-claude-code.model"/>
+		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-model-hint"/>
 
 		<separator class="thin"/>
 		<label data-l10n-id="zcc-pref-effort"/>
@@ -28,6 +29,8 @@
 		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-allowed-tools-hint"/>
 
 		<separator class="thin"/>
+		<checkbox data-l10n-id="zcc-pref-allow-write" preference="extensions.zotero-claude-code.allowWrite"/>
+		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-allow-write-hint"/>
 		<checkbox data-l10n-id="zcc-pref-user-settings" preference="extensions.zotero-claude-code.useUserSettings"/>
 		<checkbox data-l10n-id="zcc-pref-follow-reader" preference="extensions.zotero-claude-code.followReader"/>
 		<checkbox data-l10n-id="zcc-pref-zotero-theme" preference="extensions.zotero-claude-code.zoteroTheme"/>
@@ -35,5 +38,10 @@
 		<separator class="thin"/>
 		<label data-l10n-id="zcc-pref-extra-prompt"/>
 		<html:textarea rows="4" preference="extensions.zotero-claude-code.extraPrompt"/>
+
+		<separator class="thin"/>
+		<label data-l10n-id="zcc-pref-custom-commands"/>
+		<html:textarea rows="4" preference="extensions.zotero-claude-code.customCommands"/>
+		<label class="zcc-pref-hint" data-l10n-id="zcc-pref-custom-commands-hint"/>
 	</groupbox>
 </vbox>

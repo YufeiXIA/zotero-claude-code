@@ -14,7 +14,7 @@ async function startup({ id, version, rootURI }) {
 		["content", "zotero-claude-code", rootURI + "content/"],
 	]);
 
-	for (const file of ["markdown.js", "claude-process.js", "store.js", "context.js", "chat-view.js", "plugin.js"]) {
+	for (const file of ["markdown.js", "claude-process.js", "bridge.js", "store.js", "context.js", "chat-view.js", "plugin.js"]) {
 		Services.scriptloader.loadSubScript(rootURI + "content/" + file);
 	}
 	ZCC.Plugin.init({ id, version, rootURI });

@@ -298,5 +298,32 @@ ZCC.Markdown = (() => {
 		return rootList;
 	}
 
-	return { render, el };
+	// Markdown -> HTML string, for Zotero notes. Rendered through the same DOM builder, then
+	// stripped of the chat's classes, buttons and wrappers.
+	function toHTML(doc, source) {
+		const root = render(doc, source);
+		for (const node of root.querySelectorAll(".zcc-code-bar, .zcc-code-copy")) node.remove();
+		for (const block of [...root.querySelectorAll(".zcc-code-block")]) {
+			const pre = block.querySelector("pre");
+			if (pre) block.replaceWith(pre);
+		}
+		for (const wrap of [...root.querySelectorAll(".zcc-table-wrap")]) {
+			const table = wrap.querySelector("table");
+			if (table) wrap.replaceWith(table);
+		}
+		for (const math of [...root.querySelectorAll(".zcc-math-block")]) {
+			const pre = el(doc, "pre", null, "$$\n" + math.textContent + "\n$$");
+			math.replaceWith(pre);
+		}
+		for (const math of [...root.querySelectorAll(".zcc-math")]) {
+			math.replaceWith(doc.createTextNode("$" + math.textContent + "$"));
+		}
+		for (const node of root.querySelectorAll("*")) {
+			node.removeAttribute("class");
+			node.removeAttribute("title");
+		}
+		return root.innerHTML;
+	}
+
+	return { render, toHTML, el };
 })();

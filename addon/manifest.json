@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Claude Code for Zotero",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Chat with the paper you are reading, using the Claude Code CLI on your own machine. Sidebar panel or a separate window.",
   "author": "Yufei Xia",
   "homepage_url": "https://github.com/YufeiXIA/zotero-claude-code",

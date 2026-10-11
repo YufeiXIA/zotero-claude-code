@@ -5,18 +5,26 @@ ZCC.Plugin = (() => {
 	const SVG_NS = "http://www.w3.org/2000/svg";
 
 	let pluginID = null;
+	let pluginVersion = "";
 	let notifierID = null;
 	let chatWindow = null;
 	let windowView = null;
 	const sidebarViews = new Set();
 	const cleanups = [];
 
-	function init({ id }) {
+	function init({ id, version }) {
 		pluginID = id;
+		pluginVersion = version || "";
+	}
+
+	function version() {
+		return pluginVersion;
 	}
 
 	async function start() {
 		Zotero.ClaudeCode = api;
+		ZCC.Bridge.start();
+		cleanups.push(() => ZCC.Bridge.stop());
 
 		Zotero.PreferencePanes.register({
 			pluginID,
@@ -96,6 +104,8 @@ ZCC.Plugin = (() => {
 			if (win.ZoteroPane) addToWindow(win);
 		}
 		await ZCC.Store.followCurrent();
+		// Read Claude Code's model list in the background so the menu shows new models
+		ZCC.Models.load({ force: true }).catch(() => {});
 	}
 
 	// ---- main window additions ----
@@ -250,6 +260,7 @@ ZCC.Plugin = (() => {
 	async function focusReaderPaper(reader) {
 		ZCC.Context.track(reader);
 		ZCC.Store.setPinned(false);
+		if (ZCC.Store.mode() === "library") await ZCC.Store.setMode("paper");
 		const item = Zotero.Items.get(reader.itemID);
 		await ZCC.Store.activate(item, { force: true });
 	}
@@ -368,8 +379,10 @@ ZCC.Plugin = (() => {
 			ZCC.Claude.resetCache();
 			ZCC.Store.settingsChanged();
 		},
+		_reloadModels: () => ZCC.Models.load({ force: true }),
+		bridgeURL: () => ZCC.Bridge.url(),
 		_debug: () => ({ ZCC }),
 	};
 
-	return { init, start, stop, addToWindow, removeFromWindow, openWindow };
+	return { init, start, stop, addToWindow, removeFromWindow, openWindow, version };
 })();
