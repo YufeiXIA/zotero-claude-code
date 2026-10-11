@@ -353,12 +353,25 @@ ZCC.Bridge = (() => {
 	}
 
 	async function readerFor(attachment) {
-		let reader = ZCC.Context.openReaders().find(r => r.itemID === attachment.id);
+		const find = () => ZCC.Context.openReaders().find(r => r.itemID === attachment.id);
+		let reader = find();
 		if (!reader) {
 			reader = await Zotero.Reader.open(attachment.id, null, { openInBackground: true });
+			// When the PDF has an unloaded tab (e.g. restored after a restart), Zotero selects that tab
+			// and returns nothing; the tab's reader shows up a moment later.
+			for (let i = 0; !reader && i < 60; i++) {
+				await Zotero.Promise.delay(250);
+				reader = find();
+			}
 			if (!reader) throw new Error("Could not open the PDF in the reader.");
 		}
 		if (reader._initPromise) await reader._initPromise;
+		// The PDF view and its page data load after the reader itself
+		for (let i = 0; i < 60; i++) {
+			const view = reader._internalReader?._primaryView;
+			if (view && (view._iframeWindow?.PDFViewerApplication?.pdfDocument || view._pdfPages?.length)) break;
+			await Zotero.Promise.delay(250);
+		}
 		return reader;
 	}
 
@@ -378,38 +391,31 @@ ZCC.Bridge = (() => {
 
 	const collapse = (s) => String(s || "").replace(/\s+/g, " ").trim().toLowerCase();
 
-	// Text of a page plus a map from each character of that text back to the chars array.
+	// Text of a page with all whitespace removed, plus a map from each character of that text
+	// back to the chars array. Matching without whitespace makes line breaks, extra spaces before
+	// punctuation ("reasoning , selecting") and ligatures irrelevant.
 	// `dehyphenate` drops a hyphen that ends a line, so "trans-\nformer" matches "transformer".
+	// (Hyphens the reader already marks as ignorable are always dropped.)
 	function pageText(chars, { dehyphenate = false } = {}) {
 		let text = "";
 		const map = [];
-		let needSpace = false;
 		for (let i = 0; i < chars.length; i++) {
 			const ch = chars[i];
 			if (ch.ignorable) continue;
 			const c = String(ch.c || "");
 			const breaks = ch.lineBreakAfter || ch.paragraphBreakAfter;
 			if (dehyphenate && breaks && c === "-" && i + 1 < chars.length) continue;
-			if (/\s/.test(c)) {
-				needSpace = true;
-				continue;
-			}
-			if (needSpace && text) {
-				text += " ";
-				map.push(-1);
-			}
-			needSpace = false;
 			for (const unit of c.toLowerCase()) {
+				if (/\s/.test(unit)) continue;
 				text += unit;
 				map.push(i);
 			}
-			if (breaks || ch.spaceAfter || ch.wordBreakAfter) needSpace = true;
 		}
 		return { text, map };
 	}
 
 	function findRange(chars, query) {
-		const q = collapse(query);
+		const q = collapse(query).replace(/\s+/g, "");
 		if (!q) return null;
 		for (const dehyphenate of [false, true]) {
 			const { text, map } = pageText(chars, { dehyphenate });
@@ -446,18 +452,25 @@ ZCC.Bridge = (() => {
 		};
 		for (let i = first; i <= last; i++) {
 			const ch = chars[i];
-			if (!ch?.rect || ch.ignorable) continue;
-			const r = ch.rect;
-			const line = ch.inlineRect && (!ch.rotation || ch.rotation === 0) ? ch.inlineRect : r;
-			const box = [r[0], line[1], r[2], line[3]];
-			if (!run) run = box.slice();
-			else {
-				run[0] = Math.min(run[0], box[0]);
-				run[1] = Math.min(run[1], box[1]);
-				run[2] = Math.max(run[2], box[2]);
-				run[3] = Math.max(run[3], box[3]);
+			if (!ch) continue;
+			// Ignorable characters (e.g. a soft end-of-line hyphen) are left out of the text but,
+			// like Zotero's own highlighter, still covered by the box. They often carry the line break.
+			const lineEnds = ch.lineBreakAfter || ch.paragraphBreakAfter;
+			if (ch.rect) {
+				const r = ch.rect;
+				const line = ch.inlineRect && (!ch.rotation || ch.rotation === 0) ? ch.inlineRect : r;
+				const box = [r[0], line[1], r[2], line[3]];
+				// No vertical overlap with the current box means a new line started
+				if (run && (box[1] >= run[3] || box[3] <= run[1])) push();
+				if (!run) run = box.slice();
+				else {
+					run[0] = Math.min(run[0], box[0]);
+					run[1] = Math.min(run[1], box[1]);
+					run[2] = Math.max(run[2], box[2]);
+					run[3] = Math.max(run[3], box[3]);
+				}
 			}
-			if (ch.lineBreakAfter || ch.paragraphBreakAfter) push();
+			if (lineEnds) push();
 		}
 		push();
 		return rects;
@@ -468,14 +481,16 @@ ZCC.Bridge = (() => {
 		return `${pad(pageIndex, 5)}|${pad(offset, 6)}|${pad(top, 5)}`;
 	}
 
+	// The highlighted text as Zotero would store it: real spaces only (a word break before a comma
+	// is not a space), soft end-of-line hyphens dropped.
 	function matchedText(chars, first, last) {
 		let text = "";
 		for (let i = first; i <= last; i++) {
 			const ch = chars[i];
-			if (!ch || ch.ignorable) continue;
+			if (!ch) continue;
+			if (ch.ignorable) continue;
 			text += ch.c || "";
-			if (ch.lineBreakAfter && ch.c === "-") text = text.slice(0, -1);
-			else if (ch.spaceAfter || ch.lineBreakAfter || ch.paragraphBreakAfter || ch.wordBreakAfter) text += " ";
+			if (ch.spaceAfter || ch.lineBreakAfter || ch.paragraphBreakAfter) text += " ";
 		}
 		return text.replace(/\s+/g, " ").trim();
 	}
@@ -666,5 +681,5 @@ ZCC.Bridge = (() => {
 		});
 	}
 
-	return { start, stop, available, mcpConfig, allowedToolNames, SERVER_NAME, url, writesAllowed, saveNote, _test: { findRange, rectsFor, pageText, sortIndex, handle, matchedText } };
+	return { start, stop, available, mcpConfig, allowedToolNames, SERVER_NAME, url, writesAllowed, saveNote, _test: { findRange, rectsFor, pageText, sortIndex, handle, matchedText, readerFor, pageData } };
 })();

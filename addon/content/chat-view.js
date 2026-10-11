@@ -309,6 +309,13 @@ ZCC.ChatView = (() => {
 		const quoteBox = el(doc, "div", "zcc-quote");
 		const quick = el(doc, "div", "zcc-quick");
 		quick.setAttribute("title", t("quickTitle"));
+		// The row scrolls sideways with its scrollbar hidden; let an ordinary mouse wheel scroll it
+		quick.addEventListener("wheel", (event) => {
+			if (event.ctrlKey || event.metaKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+			if (quick.scrollWidth <= quick.clientWidth) return;
+			event.preventDefault();
+			quick.scrollLeft += event.deltaY * (event.deltaMode === 1 ? 30 : 1);
+		}, { passive: false });
 
 		const composerWrap = el(doc, "div", "zcc-composer-wrap");
 		const popup = el(doc, "div", "zcc-popup");
