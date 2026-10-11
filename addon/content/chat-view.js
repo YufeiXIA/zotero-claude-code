@@ -33,6 +33,15 @@ ZCC.ChatView = (() => {
 			modelTitle: "Model (switching keeps the conversation)",
 			effortTitle: "Reasoning effort",
 			effortDefault: "effort: auto",
+			appearance: "Appearance: color and text size (Ctrl+= / Ctrl+- also work)",
+			themeLabel: "Color",
+			sizeLabel: "Text size",
+			theme_auto: "Auto",
+			theme_light: "Light",
+			theme_warm: "Warm",
+			theme_dark: "Dark",
+			smaller: "Smaller text",
+			larger: "Larger text",
 			suggestions: ["Summarize the main contribution", "Explain the method in plain words", "What are the limitations?", "What does this page say?"],
 		},
 		zh: {
@@ -64,6 +73,15 @@ ZCC.ChatView = (() => {
 			modelTitle: "模型（切换后对话会接着聊）",
 			effortTitle: "推理强度",
 			effortDefault: "强度：自动",
+			appearance: "外观：配色和字号（也可以用 Ctrl+= / Ctrl+-）",
+			themeLabel: "配色",
+			sizeLabel: "字号",
+			theme_auto: "自动",
+			theme_light: "浅色",
+			theme_warm: "暖色",
+			theme_dark: "深色",
+			smaller: "字号调小",
+			larger: "字号调大",
 			suggestions: ["总结这篇论文的核心贡献", "用通俗的话解释方法部分", "这篇论文有哪些局限？", "当前这一页讲了什么？"],
 		},
 	};
@@ -73,6 +91,21 @@ ZCC.ChatView = (() => {
 		let s = STRINGS[lang][key] ?? STRINGS.en[key];
 		if (vars) for (const [k, v] of Object.entries(vars)) s = s.replace("{" + k + "}", v);
 		return s;
+	}
+
+	const PREF = "extensions.zotero-claude-code.";
+	const THEMES = ["auto", "light", "warm", "dark"];
+	const DEFAULT_FONT_SIZE = 13;
+	const MIN_FONT_SIZE = 11;
+	const MAX_FONT_SIZE = 22;
+
+	function fontSize() {
+		const value = parseInt(Zotero.Prefs.get(PREF + "fontSize", true));
+		return Number.isFinite(value) ? Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, value)) : DEFAULT_FONT_SIZE;
+	}
+
+	function setFontSize(size) {
+		Zotero.Prefs.set(PREF + "fontSize", Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(size))), true);
 	}
 
 	// A passage the user picked in the reader, waiting to be sent
@@ -148,8 +181,31 @@ ZCC.ChatView = (() => {
 		const moveBtn = options.mode === "sidebar"
 			? button(doc, "zcc-icon-btn", "⧉", t("popOut"), () => options.onPopOut?.())
 			: button(doc, "zcc-icon-btn", "⇲", t("dock"), () => options.onDock?.());
-		actions.append(pinBtn, newBtn, moveBtn);
+		const aaBtn = button(doc, "zcc-icon-btn zcc-aa", "Aa", t("appearance"), () => {
+			appearanceBar.hidden = !appearanceBar.hidden;
+			aaBtn.classList.toggle("zcc-active", !appearanceBar.hidden);
+		});
+		actions.append(aaBtn, pinBtn, newBtn, moveBtn);
 		header.append(paperBox, actions);
+
+		// Appearance bar: theme and font size, saved as prefs and shared by every view
+		const appearanceBar = el(doc, "div", "zcc-appearance");
+		appearanceBar.hidden = true;
+		const themeSeg = el(doc, "div", "zcc-seg");
+		const themeButtons = {};
+		for (const theme of THEMES) {
+			const b = button(doc, "", t("theme_" + theme), "", () => Zotero.Prefs.set(PREF + "theme", theme, true));
+			themeButtons[theme] = b;
+			themeSeg.append(b);
+		}
+		const sizeSeg = el(doc, "div", "zcc-seg");
+		const sizeValue = el(doc, "span", "zcc-size-value");
+		sizeSeg.append(
+			button(doc, "", "A−", t("smaller"), () => setFontSize(fontSize() - 1)),
+			sizeValue,
+			button(doc, "", "A+", t("larger"), () => setFontSize(fontSize() + 1)),
+		);
+		appearanceBar.append(el(doc, "span", null, t("themeLabel")), themeSeg, el(doc, "span", null, t("sizeLabel")), sizeSeg);
 
 		const messages = el(doc, "div", "zcc-messages");
 		const quoteBox = el(doc, "div", "zcc-quote");
@@ -171,8 +227,42 @@ ZCC.ChatView = (() => {
 			button(doc, "", t("bringBack"), "", () => options.onDock?.()),
 		);
 
-		root.append(header, messages, quoteBox, composer, popped);
+		root.append(header, appearanceBar, messages, quoteBox, composer, popped);
 		container.append(root);
+
+		function applyAppearance() {
+			const theme = Zotero.Prefs.get(PREF + "theme", true) || "auto";
+			if (theme === "auto") delete root.dataset.theme;
+			else root.dataset.theme = theme;
+			for (const [name, b] of Object.entries(themeButtons)) b.classList.toggle("zcc-active", name === theme);
+			const size = fontSize();
+			root.style.setProperty("--zcc-font-size", size + "px");
+			sizeValue.textContent = size + "px";
+			// Paint the window itself too, so no stripe of the old color shows at the edges
+			if (options.mode === "window") {
+				doc.documentElement.style.background = win.getComputedStyle(root).getPropertyValue("--zcc-bg");
+			}
+		}
+
+		// Ctrl+= / Ctrl+- / Ctrl+0 and Ctrl+wheel change the font size, like in a browser
+		root.addEventListener("keydown", (event) => {
+			if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+			if (event.key === "=" || event.key === "+") setFontSize(fontSize() + 1);
+			else if (event.key === "-") setFontSize(fontSize() - 1);
+			else if (event.key === "0") setFontSize(DEFAULT_FONT_SIZE);
+			else return;
+			event.preventDefault();
+			event.stopPropagation();
+		});
+		root.addEventListener("wheel", (event) => {
+			if (!(event.ctrlKey || event.metaKey)) return;
+			event.preventDefault();
+			setFontSize(fontSize() + (event.deltaY < 0 ? 1 : -1));
+		}, { passive: false });
+
+		const prefObserver = Zotero.Prefs.registerObserver(PREF + "theme", applyAppearance, true);
+		const sizeObserver = Zotero.Prefs.registerObserver(PREF + "fontSize", applyAppearance, true);
+		applyAppearance();
 
 		// ---- behaviour ----
 
@@ -377,6 +467,8 @@ ZCC.ChatView = (() => {
 			render,
 			focus: () => input.focus(),
 			destroy() {
+				Zotero.Prefs.unregisterObserver(prefObserver);
+				Zotero.Prefs.unregisterObserver(sizeObserver);
 				unsubscribe();
 				quoteListeners.delete(onQuote);
 				root.remove();

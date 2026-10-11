@@ -39,9 +39,12 @@ The buttons in the chat header:
 
 | Button | What it does |
 | --- | --- |
+| Aa | Show the appearance bar: color theme (Auto, Light, Warm, Dark) and text size |
 | 📌 | Keep the chat on this paper even when you open another one |
 | ＋ | Start a new conversation for this paper |
 | ⧉ / ⇲ | Move the chat into its own window, or back into the sidebar |
+
+Text size also follows the usual browser keys while the chat has focus: Ctrl+= and Ctrl+- (or Ctrl and the mouse wheel) make it bigger or smaller, and Ctrl+0 resets it. The color theme and text size are shared by the sidebar and the window, and Zotero remembers them.
 
 A two-monitor setup works well. In Zotero's Settings > General > Reader, turn on "Open files in new windows instead of tabs". PDFs then open in their own windows, so you can keep the reader on one screen and the chat window on the other. The chat window remembers where you put it.
 

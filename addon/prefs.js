@@ -5,3 +5,5 @@ pref("extensions.zotero-claude-code.allowedTools", "Read,Grep,Glob,WebSearch,Web
 pref("extensions.zotero-claude-code.useUserSettings", true);
 pref("extensions.zotero-claude-code.extraPrompt", "");
 pref("extensions.zotero-claude-code.followReader", true);
+pref("extensions.zotero-claude-code.theme", "auto");
+pref("extensions.zotero-claude-code.fontSize", 13);
